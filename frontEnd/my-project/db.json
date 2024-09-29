@@ -1,0 +1,36 @@
+{
+  "users": [
+    {
+      "id": "867d",
+      "username": "muema",
+      "fullName": "keve",
+      "email": "k@gmail.com",
+      "password": "12345678",
+      "confirmPassword": "12345678"
+    },
+    {
+      "id": "226f",
+      "username": "jose",
+      "fullName": "muema",
+      "email": "fmusyokafrancis@gmail.com",
+      "password": "12345678",
+      "confirmPassword": "12345678"
+    },
+    {
+      "id": "5226",
+      "username": "erick",
+      "fullName": "mutinda",
+      "email": "gff@gmail.com",
+      "password": "123456789",
+      "confirmPassword": "123456789"
+    },
+    {
+      "id": "9400",
+      "username": "frank",
+      "fullName": "Frank Musyoka",
+      "email": "frank@gmail.com",
+      "password": "123456",
+      "confirmPassword": "123456"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+
+  
+  /* User details styling */
+  .user-details {
+    margin-bottom: 20px;
+  }
+  
+  .user-greeting {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .user-info {
+    font-size: 16px;
+    margin-bottom: 5px;
+  }
+  
+  /* Links styling */
+  .profile-update,
+  .password-change {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+  
+  .profile-link {
+    color: #007bff; /* Blue link color */
+    text-decoration: none;
+  }
+  
+  .profile-link:hover {
+    text-decoration: underline;
+  }
+  
+
+  .deactivate-btn {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .deactivate-btn:hover {
+    background-color: darkred;
+  }
+  
