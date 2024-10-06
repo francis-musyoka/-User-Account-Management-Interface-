@@ -37,12 +37,12 @@ TECHNOLOGIES :-
 How to run the project 🚀:
 
 1. Open the Terminal.
-2. Clone the repository by running: $ git clone https://github.com/francis-musyoka/-User-Account-Management-Interface- .
+2. Clone the repository by running: $ git clone https://github.com/francis-musyoka/-User-Management-Interface- .
 3. Ensure that NodeJS and npm are installed on the system.
 4. change the diectory to repository name using $ cd -User-Management-Interface-.
 5. Install the dependencies for both the frontend and backend $ npm install.
 6. To run the project in development mode, execute: npm run dev ; both the frontend and backend.
-7. The React project will run on http://localhost:3000 by default. Make sure your backend API is also       running.
+7. The React project will run on http://localhost:3000 by default. Make sure your backend API is also running.
 
 
 
