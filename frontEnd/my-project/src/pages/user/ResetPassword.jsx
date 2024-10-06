@@ -1,40 +1,52 @@
 import React from 'react'
-import '../../public/css/resetpassword.css';
+import '../../../public/css/resetpassword.css'
 import { useState } from 'react';
-import { PATHS_URL ,API_HOST,POST_ROUTES} from '../constants';
+import { PATHS_URL ,API_HOST,POST_ROUTES} from '../../constants';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { validateResetPasswordForm } from '../../utils/validateAllForms';
 
 function ResetPassword() {
    
     const [showPassword,setShowPassword] = useState(false)
     const [password,setPassword] = useState('');
     const [confirmPassword,setConfirmPassword] = useState('');
+    const [formErrors,setFormErrors] =useState('')
    
     const{token} = useParams()
 
     const navigate = useNavigate()
 
+    const validateForm =()=>{
+        const errors = validateResetPasswordForm(password,confirmPassword);
+        setFormErrors(errors);
+        console.log(errors);
+        return Object.keys(errors).length < 1
+    }
+
     const handleSubmit =async(e)=>{
         e.preventDefault()
+        const isValid = validateForm();
         
-        try {
-           
-            const response = await axios.post(`${API_HOST}${POST_ROUTES.RESET_PASSWORD(token)}`,{password,confirmPassword})
-            console.log(response.status);
-            
-            if(response.status===204){
-                setPassword("");
-                setConfirmPassword("");
-                toast.success('Password has been reset successfully');
-                navigate(PATHS_URL.SIGNIN);
+        if(isValid){
+            try {
+                const response = await axios.post(`${API_HOST}${POST_ROUTES.RESET_PASSWORD(token)}`,{password,confirmPassword})
+                console.log(response.status);
+                
+                if(response.status===204){
+                    setPassword("");
+                    setConfirmPassword("");
+                    toast.success('Password has been reset successfully');
+                    navigate(PATHS_URL.SIGNIN);
+                }
+                
+            } catch (error) {
+                toast.error(error.response.data.error)  
             }
-            
-        } catch (error) {
-            toast.error(error.response.data.error)  
         }
+       
     }
 
     return (
@@ -49,7 +61,7 @@ function ResetPassword() {
                         onChange={(e)=>setPassword(e.target.value)}
                         className="form-control-1"
                     />
-                
+                     <div className='not-Valid-4'>{formErrors.password}</div>
                 </div>
                 <div className="form-group-1 ">
                     <label htmlFor='confirmPassword' className="form-label-1">Confirm Password</label>
@@ -59,7 +71,7 @@ function ResetPassword() {
                         onChange={(e)=>setConfirmPassword(e.target.value)}
                         className="form-control-1"
                     />
-                 
+                    <div className='not-Valid-4'>{formErrors.confirmPassword}</div>
                 </div>
                 <div className="form-group-1 ">
                     <input 

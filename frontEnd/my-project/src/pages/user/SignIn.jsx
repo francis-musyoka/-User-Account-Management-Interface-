@@ -2,29 +2,36 @@ import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState} from 'react'
 import '../../../public/css/signIn.css'
-import { useLocalstorage} from '../../LocalStorage/useLocalStorage';
 import { PATHS_URL } from '../../constants';
-import axios from 'axios';
-import { toast } from 'react-toastify';
 import { useAuth } from '../../utils/AuthContext';
-
-
+import { validateLoginForm } from '../../utils/validateAllForms';
+import {useLocalstorage} from '../../utils/useLocalStorage';
 
 
 const SignIn = ()=> {
-    const [userName, setUserName] = useLocalstorage('userName', '')
-    const [password, setPassword] =  useLocalstorage('password', '')
-    const[showPassword,setShowPassword] = useState(false)
+    const [userName, setUserName] = useLocalstorage('userName', '');
+    const [password, setPassword] =  useLocalstorage('password', '');
+    const [formErrors, setFormErrors] = useState('');
+    const[showPassword,setShowPassword] = useState(false);
     
     const {loginAction} = useAuth()
-
+  
+    const validateForm =()=>{
+      const errors = validateLoginForm(userName,password);
+      setFormErrors(errors)
+      console.log(errors);
+      
+      return Object.keys(errors).length < 1
+    }
 
     // Function to handle form submission
     const submitHandler = async(e)=>{
-        e.preventDefault();  
+      e.preventDefault(); 
+      const isValid = validateForm();
+      if(isValid){
         await loginAction(userName,password)
         return;
-   
+      }
     }
 
  // JSX for rendering the sign-in form
@@ -35,6 +42,7 @@ const SignIn = ()=> {
                   <div className="form-group-3">
                     <label htmlFor="userName" className="form-label-3">User Name</label>
                     <input className="form-control-3" type='text' value={userName} onChange ={e=>setUserName(e.target.value)} />
+                    <div className='not-Valid-4'>{formErrors.userName}</div>
                   </div>
 
                   <div className="form-group-3">
@@ -44,6 +52,7 @@ const SignIn = ()=> {
                       value={password} 
                       onChange ={e=>setPassword(e.target.value)} 
                     />
+                    <div className='not-Valid-4'>{formErrors.password}</div>
                   </div>
 
                   <input

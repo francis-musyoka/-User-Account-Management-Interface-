@@ -129,8 +129,8 @@ const DashBoard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {users.map((userDetails,index)=>(
-                                        <tr key={index}>
+                                    {users.map((userDetails)=>(
+                                        <tr key={userDetails._id}>
                                             <td>{userDetails.userName}</td>
                                             <td>{userDetails.fullName}</td>
                                             <td>{userDetails.email}</td>

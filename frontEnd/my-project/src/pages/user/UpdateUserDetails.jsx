@@ -1,12 +1,10 @@
 import React from 'react'
-import '../../public/css/update.css'
+import '../../../public/css/update.css'
 import { useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PATHS_URL,API_HOST,PUT_ROUTES} from "../constants";
-import { useAuth } from '../utils/AuthContext';
-// import { fetchUserData} from '../utils/loginUser';
-import { SignUpForm } from './SignUp page/SignUpForm';
-import axios from 'axios';
+import { PATHS_URL,PUT_ROUTES, axiosInstance} from "../../constants";
+import { useAuth } from '../../utils/AuthContext';
+import { SignUpForm } from './SignUpForm';
 import { toast } from 'react-toastify';
 
 
@@ -36,7 +34,7 @@ function UpdateUserDetails() {
     const handleSubmit = async (values) => {
         const {userName,fullName,email} =values
         try {
-            const response = await axios.put(`${API_HOST}${PUT_ROUTES.UPDATE_USER(user._id)}`,{userName,fullName,email},{withCredentials:true}) 
+            const response = await axiosInstance.put(PUT_ROUTES.UPDATE_USER(user._id),{userName,fullName,email}) 
             if(response.status===200){
                 navigate(PATHS_URL.PROFILE)
                 toast.success('Successfully updated your profile')

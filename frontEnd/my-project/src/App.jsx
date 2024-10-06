@@ -1,19 +1,19 @@
 
 
 import { BrowserRouter,Routes, Route } from 'react-router-dom'
-import Home from './pages/Home page/Home';
-import SignIn from './pages/SignIn page/SignIn';
-import SignUp from './pages/SignUp page/SignUp';
-import Forgotpassword from './pages/Forgotpassword/Forgotpassword';
+import Home from './pages/user/Home';
+import SignIn from './pages/user/SignIn';
+import SignUp from './pages/user/SignUp';
+import Forgotpassword from './pages/user/Forgotpassword';
 import AuthProvider from './utils/AuthContext';
-import RequireAuth from './pages/RequireAuth';
+import RequireAuth from './pages/user/RequireAuth';
 import Navbar from './pages/Navbar/Navbar';
-import About from './pages/About page/About';
-import Profile from './pages/Profile page/Profile';
-import UpdateUserDetails from './pages/UpdateUserDetails';
-import ResetPassword from './pages/ResetPassword';
+import About from './pages/user/About';
+import Profile from './pages/user/Profile';
+import UpdateUserDetails from './pages/user/UpdateUserDetails';
+import ResetPassword from './pages/user/ResetPassword';
 import { PATHS_URL } from './constants';
-import ChangePassword from './pages/ChangePassword';
+import ChangePassword from './pages/user/ChangePassword';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DashBoard from './pages/admin/DashBoard';

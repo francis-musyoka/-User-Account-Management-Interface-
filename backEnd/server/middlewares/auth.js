@@ -13,10 +13,10 @@ exports.isAuthenticated = async(req,res,next)=>{
         }
         try {
              // Check if the token is valid using a secret key
-            const decode = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-            
+            const decodeToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+       
             // Get the user linked to the token
-            const user = await User.findById(decode.id).select(
+            const user = await User.findById(decodeToken.id).select(
                 "-password -refreshToken"
             );
 

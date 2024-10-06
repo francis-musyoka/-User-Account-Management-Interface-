@@ -1,6 +1,6 @@
 import React from 'react'
 import '../../../public/css/signUp.css'
-import { PATHS_URL, API_HOST,POST_ROUTES} from '../../constants';
+import { PATHS_URL, API_HOST,POST_ROUTES, axiosInstance} from '../../constants';
 import { Link,useNavigate} from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -14,7 +14,7 @@ function SignUp() {
     const handleSubmit =async(formData) => {
       try {
         const response =await axios.post(`${API_HOST}${POST_ROUTES.SIGN_UP}`,formData)
-        console.log(response);
+        
         if(response.data.success === true){
           navigate(PATHS_URL.SIGNIN)
           toast.success('Successfully sign up')

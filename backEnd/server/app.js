@@ -19,11 +19,9 @@ app.use(cors({
     credentials: true, // Allow credentials (cookies)
 }));
 
-
 app.use(bodyParser.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
-
 
 //ROUTERS
 app.use(userRouter)

@@ -18,17 +18,18 @@ const AuthProvider = ({ children }) => {
       const navigate = useNavigate()
 
      
-      const refreshAccessToken = async () => {
-        
+      const refreshAccessToken = async () => { 
         try {
           const response = await axiosInstance.post(POST_ROUTES.REFRESH_ACCESS_TOKEN);
+        
           if (response.data.success === true) {
-            return response.data.accessToken;
+            return response.data.newAccessToken;
           }
         }catch (error) {
           console.log('Failed to refresh token:', error);
-          logoutSessionExpired();
+          
           return null;
+          
         }
       };
   
@@ -53,14 +54,16 @@ const AuthProvider = ({ children }) => {
                   return response;
               },
               async (error) => {
+                console.log(error);
+                
                   const originalRequest = error.config;
 
                   // Skip refresh token logic during login requests or sign-up requests
               if (originalRequest.url.includes(POST_ROUTES.SIGN_IN) || originalRequest.url.includes(POST_ROUTES.SIGN_UP)) {
-                return Promise.reject(error); // Skip refresh token for login
-            }
+                return Promise.reject(error); 
+              }
                   console.log(error.response.status);
-                  
+              if(error.response && error.response.status !== 401) return Promise.reject(error); 
                   if (error.response && error.response.status === 401 && !originalRequest._retry) {
                       originalRequest._retry = true;
                       const newAccessToken = await refreshAccessToken();
@@ -68,9 +71,13 @@ const AuthProvider = ({ children }) => {
                       
                       if (newAccessToken) {
                           setToken(newAccessToken);
-                          sessionStorage.setItem('token', response.data.accessToken)
+                          sessionStorage.setItem('token', newAccessToken)
                           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                           return axiosInstance(originalRequest);
+                      }else{
+                        console.log("LOGOUT IN 85 ::::::");
+                        logoutSessionExpired();
+                        return Promise.reject(error);
                       }
                   }
                   return Promise.reject(error);
@@ -81,7 +88,6 @@ const AuthProvider = ({ children }) => {
    
       useEffect(()=>{
           if(token){
-           
               const fetchuser=async()=>{
                   try {
                       const response = await axiosInstance.get(GET_ROUTES.USER_PROFILE);

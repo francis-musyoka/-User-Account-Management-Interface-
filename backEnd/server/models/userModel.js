@@ -29,8 +29,12 @@ const userSchema = new Schema({
         type: String,
         required: [true, "Please add a Password"],
     },
-    refreshToken:{
+    forgotPasswordToken:{
         type: String,
+        default: null
+    },
+    forgotPasswordTokenExpiration:{
+        type:Date,
         default: null
     },
     role:{
@@ -59,22 +63,6 @@ userSchema.pre("save", async function (next){
 userSchema.methods.compareHashedPassword = async function (password) {
     return await bcrypt.compare(password,this.password)
 }
-
-
-// METHOD TO GENERATE ACCESS TOKEN
-userSchema.methods.generateAccessToken = function(){
-    return jwt.sign({id:this._id},process.env.ACCESS_TOKEN_SECRET,{
-         expiresIn: '5m'
-    })
-}
-
-// METHOD TO GENERATE REFRESH TOKEN
-userSchema.methods.generateRefreshToken = function () {
-    return jwt.sign({id:this._id},process.env.REFRESH_TOKEN_SECRET,{
-        expiresIn: '7d'
-   })
-}
-
 
 const User = mongoose.model("USER",userSchema);
 module.exports = User;

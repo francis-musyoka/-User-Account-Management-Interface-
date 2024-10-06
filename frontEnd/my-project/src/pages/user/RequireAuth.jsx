@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
-import { useLocation,Outlet, useNavigate } from 'react-router-dom'
-import { useAuth } from '../utils/AuthContext'
-import { PATHS_URL,API_HOST } from '../constants';
+import React, { useEffect } from 'react';
+import { useLocation,Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../utils/AuthContext';
+import { PATHS_URL,API_HOST } from '../../constants';
 
 
 function RequireAuth() {

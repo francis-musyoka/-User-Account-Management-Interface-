@@ -5,7 +5,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const bcrypt =require('bcryptjs')
 const { validatePassword } = require('../utils/verifyUser');
-const {generateAccessAndRefreshTokens} = require("../utils/generateTokens")
+const UserTokenController = require('./tokenController')
+const Token = require('../models/userTokenModel');
 
 
 //SIGNUP
@@ -36,8 +37,7 @@ exports.signUp=async(req,res,next)=>{
      
     } catch (error) {
        next(error)
-    }
-    
+    }  
 }
 
 
@@ -56,7 +56,7 @@ exports.signIn= async(req,res,next)=>{
         
         // Check if the user exists
         if(!user){
-            return next(new ErrorResponse('Invalid credentials',401));
+            return next(new ErrorResponse('Invalid credentials',404));
         }
 
         if(!user.isActive){
@@ -72,81 +72,54 @@ exports.signIn= async(req,res,next)=>{
         };
         
         // Generate access and refresh tokens
-        const accessToken = user.generateAccessToken();
-        const refreshToken = user.generateRefreshToken();
-
-        user.refreshToken = refreshToken;
-        await user.save({ validateBeforeSave: false });
+       const {accessToken,refreshToken} = await UserTokenController.createOrUpdateToken(user._id)
+       console.log(accessToken,refreshToken);
+       
 
         // Set options for cookies
         const options = {
-            httpOnly: true,
-            sameSite: 'Lax', 
-            secure: false,
+            httpOnly: process.env.COOKIE_HTTP_ONLY,
+            secure: process.env.COOKIE_SECURE,
+            sameSite: process.env.COOKIE_SAME_SITE,
         };
     
         // Set cookies with the generated tokens
         res.status(200)
            .cookie('accessToken', accessToken, options)
            .cookie('refreshToken', refreshToken, options)
-           .json({ success: true, accessToken});
+           .json({ success: true, accessToken,refreshToken});
         
     } catch (error) {
         next(new ErrorResponse("Can not log in, check your credentials",401));
     }
 }
 
-exports.refreshAccessToken =async(req,res,next)=>{
-    //Get  refresh token from cookies
-    const incomingRefreshToken = req.cookies.refreshToken;
-      console.log(incomingRefreshToken);
 
-    // If no refresh token is present, deny access with a 401 Unauthorized status
-    if(!incomingRefreshToken){
-        return next(new ErrorResponse("Refresh token not Provided",401))
-    }
+exports.refreshAccessToken =async(req,res,next)=>{
+    //Get  tokens from cookies
+    const {accessToken,refreshToken} = req.cookies;
 
     try {
-
-        // Verify the incoming refresh token using the secret key
-         const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
+        // Generate new access token
+        const {newAccessToken} = await UserTokenController.generateNewAccessToken(accessToken,refreshToken,next);
+        
+        const options = {
+            httpOnly: process.env.COOKIE_HTTP_ONLY,
+            secure: process.env.COOKIE_SECURE,
+            sameSite: process.env.COOKIE_SAME_SITE,
             
-            
-         // Find the user associated with the refresh token
-         const user = await User.findById(decodedToken.id);
-          
+        }
 
-         // If  user not found and stored refresh token doesn't match the incoming one deny access
-         if(!user){
-            return next(new ErrorResponse("Access denyed",401))
-         }
-
-         console.log("refreshToken..........??",user.refreshToken);
-         console.log("incomingRefreshToken..........??",incomingRefreshToken);
-         
-         if(user.refreshToken!== incomingRefreshToken){
-            return next(new ErrorResponse("Access denyed222",401))
-         }
-
-         // Generate new access
-         const accessToken = user.generateAccessToken();
-
-         const options = {
-            httpOnly: true,
-            sameSite: "Lax",
-            secure: false
-         }
-
-         res.status(200)
-            .cookie("accessToken",accessToken,options)
+        res.status(200)
+            .cookie("accessToken",newAccessToken,options)
             .json({
                 success: true,
-                accessToken
+                newAccessToken
             })
-
     } catch (error) {
         next(error)
-    }  
+    }
+    
 }
 
 
@@ -177,33 +150,36 @@ exports.userProfile = async(req,res,next)=>{
 
 //LOGOUT
 exports.logout= async(req,res,next)=>{
-       let token = req.cookies.accessToken;
+    const {accessToken,refreshToken} = req.cookies;
 
-       if (!token) {
-        return res.status(400).json({ message: "No token provided" });
+    if (!accessToken || !refreshToken) {
+        return res.status(400).json( {message: "Unauthorized: Both access and refresh tokens are required" });
     }
 
-    console.log("..................token", token);
-
-    // Decode the token without verifying it
-    const decodedToken = jwt.decode(token);
-
-    if (!decodedToken || !decodedToken.id) {
-        return res.status(400).json({ message: "Invalid token" });
-    }
- 
-        // Remove the refresh token from the user's information
-        const user = await User.findById(decodedToken.id)
+    const userToken = await Token.findOne({refreshToken:refreshToken})
         
-        user.refreshToken = undefined;
-        await user.save({ validateBeforeSave: false });
+    if(!userToken){
+        return next(new ErrorResponse("Invalid refresh token provided",404));
+    }
+
+    // Check if the access token matches the one stored in the database
+    if(userToken.accessToken !== accessToken){
+    }
+
+    // Decode the incoming refresh token 
+    const decodedToken = jwt.decode(refreshToken);
+
+    if(decodedToken.id !== userToken.userId.toString()){
+        return next(new ErrorResponse("User ID mismatch",403));
+    }    
       
+    await userToken.deleteOne()
         // Set options for cookies
         const options = {
-          httpOnly: true,
-          secure: true, // Enable in a production environment with HTTPS
+          httpOnly: process.env.COOKIE_HTTP_ONLY,
+          secure: process.env.COOKIE_SECURE, 
         };
-      
+       
         // Clear the access and refresh tokens in cookies
         return res
                 .status(200)
@@ -211,6 +187,7 @@ exports.logout= async(req,res,next)=>{
                 .cookie("refreshToken","", options)
                 .json( {  success: true });
 }
+
 
 // UPDATE USER DETAILS
 exports.updateUserDetails = async(req,res,next)=>{
@@ -283,31 +260,50 @@ exports.updateUserPassword = async(req,res,next)=>{
 //FORGOTPASSWORD
 exports.forgotPassword = async(req,res,next)=>{
     const{email}= req.body;
-    console.log(email);
+    // console.log(email);
     
     try {
+        
+        if(!email){
+            return next(new ErrorResponse('Please enter email address.',400))
+        }
+        //Get user from db 
         const user =await User.findOne({email});
-        if(!user) {return next(new ErrorResponse('No account found for this email address.',404))}
-         
-        const secretKey = process.env.FORGOT_PASSWORD_TOKEN_SECRET
-        const token = jwt.sign({id:user._id},secretKey,{expiresIn:"15m"});
 
-       //CREATE LINK
-       console.log("......................");
-       
-        const link = `http://localhost:3000/reset-password/${token}`
+        if(!user) {return next(new ErrorResponse('No account found for this email address.',404))}
+        
+        if(!user.isActive){
+            return next(new ErrorResponse('Sorry,Your account is deactivated. Please activate your account.',404))
+        }
+
+        //Generate Token
+        const secretKey = process.env.FORGOT_PASSWORD_TOKEN_SECRET
+
+        const forgotPasswordToken = jwt.sign({id:user._id},secretKey,{expiresIn:"15m"});
+
+        // Initialize Expiring Time
+        const forgotPasswordTokenExpiration = new Date(Date.now() + 1000 * Number(process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN));
+
+        console.log("expering time::",forgotPasswordTokenExpiration.toLocaleString());
+
+        // Save Token and its expiration to db
+        user.forgotPasswordTokenExpiration = forgotPasswordTokenExpiration;
+        user.forgotPasswordToken = forgotPasswordToken;
+        await user.save();
+
+        //Create reset password link
+        const link = `http://localhost:3000/reset-password/${forgotPasswordToken}`
  
         //SENT EMAIL
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            service: 'gmail',       
             auth: {
-              user: 'aappp2358@gmail.com',
-              pass: 'oxil qzht hxag zmow'
-            }
-            
-          });
+              user: process.env.E_MAIL,
+              pass: process.env.PASSWORDAPP 
+            }        
+        });
           
-          const mailOptions = {
+        const mailOptions = {
             from: process.env.E_MAIL,
             to: user.email,
             subject: 'RESET-PASSWORD',
@@ -317,21 +313,20 @@ exports.forgotPassword = async(req,res,next)=>{
                 ${link}
                 
                 If you did not request ignore `
-
-          };
+        };
           
-          transporter.sendMail(mailOptions, function(error, info){
+        transporter.sendMail(mailOptions, function(error, info){
             if (error) {
-              console.log(error);
+              console.log("........???", error);
+              return next(new ErrorResponse('Sorry, Error occured when sent email',500))
             } else {
               console.log('Email sent: ' + info.response);
+              res.status(201).json({
+                success: true, 
+            })
             }
           });
-
-        res.status(200).json({
-            success: true,
-            
-        })
+ 
     } catch (error) {
         next(error)
     }
@@ -344,8 +339,29 @@ exports.resetPassword =async(req,res,next)=>{
     const {password,confirmPassword} = req.body;
 
     try {
-        //Verify token
+         // Find user associated with token 
+         const user = await User.findOne({forgotPasswordToken:token});
+         console.log(user)
+         if(!user){
+             return next(new ErrorResponse('User not found',400));
+         }
+
+         // Check if the token has expired
+         if (user.forgotPasswordTokenExpiration < Date.now()) {
+             return next(new ErrorResponse("Token has expired.", 403));
+         }
+        // Verify token
         const decodedToken = jwt.verify(token, process.env.FORGOT_PASSWORD_TOKEN_SECRET);
+        
+       // 
+       if(user._id.toString() !== decodedToken.id){
+        return next(new ErrorResponse("User ID mismatch",403));
+        };
+
+        // Set Forgot Password Token and its expiration time to null in the database
+        user.forgotPasswordTokenExpiration = undefined;
+        user.forgotPasswordToken = undefined
+        await user.save()
 
         // Validate password and check if passwords match
         const validation = await validatePassword(password,confirmPassword)
@@ -355,7 +371,7 @@ exports.resetPassword =async(req,res,next)=>{
 
         //Hash password
         const hashedPassword = await bcrypt.hash(password,10)
-        
+
         await User.findOneAndUpdate({_id:decodedToken.id},{password:hashedPassword})
         res.status(204).json({
             success:true,
@@ -363,7 +379,7 @@ exports.resetPassword =async(req,res,next)=>{
 
     } catch (error) {
         if(error.message ==="jwt expired"){
-            return next(new ErrorResponse("Link has expired. Please request a new password reset link.",400))
+            return next(new ErrorResponse("Link has expired. Please request a new password reset link.",403))
         }
         next(error) 
     }
@@ -377,13 +393,13 @@ exports.deactivateAccount = async(req,res,next)=>{
              return(next(new ErrorResponse("User Not Found",404)))
         }
         
-         user.isActive = false
-         await user.save({validateBeforeSave:false})
+        user.isActive = false
+        await user.save({validateBeforeSave:false})
              
-         res.status(200).json({
-             success:true,
+        res.status(200).json({
+            success:true,
             message: "Account was deactivated successfully"
-             })
+            })
          
      } catch (error) {
         next(error)

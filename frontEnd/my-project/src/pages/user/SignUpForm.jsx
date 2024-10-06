@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import '../../../public/css/signUp.css'
 import { useState, } from 'react';
-import { validateUserForm } from '../../utils/createUser';
+import { validateSignUpForm } from '../../utils/validateAllForms';
 
 
 function SignUpForm(props ) {
@@ -20,7 +20,7 @@ function SignUpForm(props ) {
   
       // Function to check validation of the form
     const validation =(hiddenElement)=>{
-      let errors = validateUserForm(
+      let errors = validateSignUpForm(
         inputValues.userName,
         inputValues.fullName,
         inputValues.email,
@@ -29,7 +29,6 @@ function SignUpForm(props ) {
         hiddenElement
       ); // store our errors
       setFormErrors(errors)
-      console.log(errors);
       return Object.keys(errors).length < 1;
     }
 
@@ -38,6 +37,7 @@ function SignUpForm(props ) {
       const{name,value} = e.target
       setInputValues({...inputValues, [name]: value})
     };
+
 
     useEffect(() => {
       if (initialValues) {
@@ -49,7 +49,6 @@ function SignUpForm(props ) {
     const handleSubmit =async(e) => {
       e.preventDefault();
       let isValid = validation(hidden);
-  
       if (isValid) {
         onSubmitHandler(inputValues)
       }
